@@ -686,14 +686,26 @@ async function getWallCanvas() {
 let SEG = null;
 async function getSegmenter() {
   if (SEG) return SEG;
-  const mod = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
-  const fs = await mod.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-  SEG = await mod.InteractiveSegmenter.createFromOptions(fs, {
-    baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite' },
-    outputCategoryMask: true,
-    outputConfidenceMasks: false
-  });
-  return SEG;
+  const base = new URL('vendor/', location.href).href;
+  const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/';
+  const sources = [
+    { lib: base + 'vision_bundle.js', wasm: base + 'wasm', model: base + 'magic_touch.tflite' },
+    { lib: CDN + 'vision_bundle.mjs', wasm: CDN + 'wasm', model: 'https://storage.googleapis.com/mediapipe-models/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite' }
+  ];
+  let lastErr = null;
+  for (const s of sources) {
+    try {
+      const mod = await import(s.lib);
+      const fs = await mod.FilesetResolver.forVisionTasks(s.wasm);
+      SEG = await mod.InteractiveSegmenter.createFromOptions(fs, {
+        baseOptions: { modelAssetPath: s.model },
+        outputCategoryMask: true,
+        outputConfidenceMasks: false
+      });
+      return SEG;
+    } catch (e) { lastErr = e; console.warn('IA source échouée', s.lib, e); }
+  }
+  throw lastErr || new Error('IA indisponible');
 }
 async function cutSubject(tx, ty) {
   toast('Détourage en cours…');
@@ -734,7 +746,7 @@ async function cutSubject(tx, ty) {
     toast('Sujet détouré ✔');
   } catch (e) {
     console.warn(e);
-    toast('Détourage impossible (connexion requise). Tu peux importer un PNG détouré.');
+    toast('Détourage impossible. Tu peux importer un PNG détouré.');
   }
 }
 $('#fWall').addEventListener('change', async e => {

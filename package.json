@@ -6,6 +6,7 @@
   "dependencies": {
     "@capacitor/android": "^5.7.0",
     "@capacitor/cli": "^5.7.0",
-    "@capacitor/core": "^5.7.0"
+    "@capacitor/core": "^5.7.0",
+    "@mediapipe/tasks-vision": "0.10.14"
   }
 }

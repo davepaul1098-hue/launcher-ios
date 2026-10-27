@@ -27,6 +27,15 @@ jobs:
       - name: Installer les dépendances
         run: npm install
 
+      - name: Embarquer l'IA de détourage (hors-ligne)
+        run: |
+          mkdir -p www/vendor/wasm
+          cp node_modules/@mediapipe/tasks-vision/vision_bundle.mjs www/vendor/vision_bundle.js
+          cp node_modules/@mediapipe/tasks-vision/wasm/* www/vendor/wasm/
+          curl -fL --retry 3 -o www/vendor/magic_touch.tflite https://storage.googleapis.com/mediapipe-models/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite
+          test "$(stat -c%s www/vendor/magic_touch.tflite)" -gt 1000000
+          ls -lh www/vendor www/vendor/wasm
+
       - name: Créer le projet Android
         run: npx cap add android
 
