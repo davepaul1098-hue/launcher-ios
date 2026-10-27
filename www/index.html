@@ -23,6 +23,11 @@
     <div id="dock" class="gl"></div>
   </div>
 
+  <div id="defBanner" class="gl">
+    <span>Définir ce launcher comme appli d’accueil par défaut ?</span>
+    <div><button id="defYes">Activer</button><button id="defNo">Plus tard</button></div>
+  </div>
+
   <div id="folder">
     <div id="folderPanel" class="gl">
       <input id="folderName" maxlength="24" autocomplete="off">
@@ -52,6 +57,7 @@
       <div class="sh-row inline"><label>% dans la batterie</label><button class="tg" id="tgPct"></button></div>
       <div class="sh-row inline"><label>Écran de veille au démarrage</label><button class="tg" id="tgLockStart"></button></div>
       <div class="sh-row inline"><label>Écran de veille à l’extinction</label><button class="tg" id="tgLockOff"></button></div>
+      <div class="sh-row inline"><label>Ma barre d’état (masque celle du système)</label><button class="tg" id="tgOwnBar"></button></div>
       <div class="sh-row"><button id="shWall" class="wide">Changer le fond d’écran</button></div>
       <div class="sh-row"><button id="shHome" class="wide">Définir comme launcher par défaut</button></div>
     </div>
@@ -84,7 +90,8 @@
       <div class="lk-row"><label>Hauteur</label><input type="range" id="rH" min="100" max="420"></div>
       <div class="lk-row two"><button id="bMode">Style</button><button id="bDepth">Profondeur</button></div>
       <div class="lk-row two"><button id="bWall">Changer le fond</button><button id="bCut">Détourer</button></div>
-      <div class="lk-row two"><button id="bImp">Importer un PNG</button><button id="bDone" class="primary">Terminé</button></div>
+      <div class="lk-row two"><button id="bImp">Importer un PNG</button><button id="bClr">Retirer le détourage</button></div>
+      <div class="lk-row two"><button id="bDone" class="primary">Terminé</button></div>
     </div>
   </div>
 

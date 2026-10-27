@@ -34,6 +34,7 @@ jobs:
           cp node_modules/@mediapipe/tasks-vision/wasm/* www/vendor/wasm/
           curl -fL --retry 3 -o www/vendor/magic_touch.tflite https://storage.googleapis.com/mediapipe-models/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite
           test "$(stat -c%s www/vendor/magic_touch.tflite)" -gt 1000000
+          curl -fL --retry 3 -o www/vendor/selfie_segmenter.tflite https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite || echo "selfie_segmenter indisponible (optionnel)"
           ls -lh www/vendor www/vendor/wasm
 
       - name: Créer le projet Android

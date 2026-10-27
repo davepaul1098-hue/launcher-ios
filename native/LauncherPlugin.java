@@ -1,5 +1,6 @@
 package com.moi.launcherios;
 
+import android.app.role.RoleManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -41,8 +42,32 @@ public class LauncherPlugin extends Plugin {
     private BroadcastReceiver pkgRcv;
     private boolean torchOn = false;
 
+    static LauncherPlugin instance;
+    static int insTop = 24;
+    static int insBottom = 0;
+
+    static JSObject insetsObj() {
+        JSObject o = new JSObject();
+        o.put("top", insTop);
+        o.put("bottom", insBottom);
+        return o;
+    }
+
+    static void setInsets(int top, int bottom) {
+        insTop = top;
+        insBottom = bottom;
+        if (instance != null) {
+            try {
+                instance.notifyListeners("insets", insetsObj());
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+    }
+
     @Override
     public void load() {
+        instance = this;
         batteryRcv = new BroadcastReceiver() {
             @Override
             public void onReceive(Context c, Intent i) {
@@ -338,6 +363,66 @@ public class LauncherPlugin extends Plugin {
                                 ? HapticFeedbackConstants.LONG_PRESS
                                 : HapticFeedbackConstants.KEYBOARD_TAP;
                         getBridge().getWebView().performHapticFeedback(c);
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }
+            });
+        } catch (Exception e) {
+            // ignore
+        }
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void getInsets(PluginCall call) {
+        call.resolve(insetsObj());
+    }
+
+    @PluginMethod
+    public void isDefaultHome(PluginCall call) {
+        boolean v = false;
+        try {
+            Intent i = new Intent(Intent.ACTION_MAIN);
+            i.addCategory(Intent.CATEGORY_HOME);
+            ResolveInfo ri = getContext().getPackageManager().resolveActivity(i, PackageManager.MATCH_DEFAULT_ONLY);
+            v = ri != null && ri.activityInfo != null
+                    && getContext().getPackageName().equals(ri.activityInfo.packageName);
+        } catch (Exception e) {
+            // ignore
+        }
+        JSObject o = new JSObject();
+        o.put("value", v);
+        call.resolve(o);
+    }
+
+    @PluginMethod
+    public void requestHome(PluginCall call) {
+        try {
+            if (Build.VERSION.SDK_INT >= 29) {
+                RoleManager rm = (RoleManager) getContext().getSystemService(Context.ROLE_SERVICE);
+                if (rm != null && rm.isRoleAvailable(RoleManager.ROLE_HOME) && !rm.isRoleHeld(RoleManager.ROLE_HOME)) {
+                    Intent i = rm.createRequestRoleIntent(RoleManager.ROLE_HOME);
+                    getActivity().startActivityForResult(i, 4242);
+                    call.resolve();
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            // on bascule sur les réglages classiques
+        }
+        openHomeSettings(call);
+    }
+
+    @PluginMethod
+    public void setStatusBar(PluginCall call) {
+        final boolean hidden = call.getBoolean("hidden", true);
+        try {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ((MainActivity) getActivity()).setStatusHidden(hidden);
                     } catch (Exception e) {
                         // ignore
                     }

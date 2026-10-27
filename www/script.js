@@ -10,7 +10,7 @@ function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<':
 function norm(s) { return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
 const pad = n => (n < 10 ? '0' : '') + n;
 let toastT = 0;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); }
+function toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), ms || 2600); }
 
 /* ---------- Plugin natif ---------- */
 let L = null;
@@ -28,7 +28,7 @@ function hap(kind) { call('haptic', { kind: kind }); }
 /* ---------- État ---------- */
 const KEY = 'ios-launcher.v1';
 const NKEY = 'ios-launcher.notes';
-const defSet = { style: 'normal', hue: 210, widgets: 'duo', pct: true, lockStart: true, lockOff: true, depth: true, ckH: 230, ckW: 0.5, ckMode: 'stack', ckStyle: 'glass' };
+const defSet = { style: 'normal', hue: 210, widgets: 'duo', pct: true, lockStart: true, lockOff: true, depth: true, ckH: 230, ckW: 0.5, ckMode: 'stack', ckStyle: 'glass', ownBar: true, defAsked: false };
 function loadState() {
   try {
     const j = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -203,7 +203,7 @@ function buildWidgets() {
     w.appendChild(n);
   } else {
     w.appendChild(el('div', 'wg gl date', '<small class="wgDow"></small><big class="wgDay"></big><span class="wgSub"></span>'));
-    w.appendChild(el('div', 'wg gl bat', '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="7"/><circle class="ring" cx="32" cy="32" r="28" fill="none" stroke="#34c759" stroke-width="7" stroke-linecap="round" stroke-dasharray="176" transform="rotate(-90 32 32)"/><text class="wgPct" x="32" y="37" text-anchor="middle" fill="#fff" font-size="15" font-weight="700"></text></svg><span class="wgBS"></span>'));
+    w.appendChild(el('div', 'wg gl wbat', '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="7"/><circle class="ring" cx="32" cy="32" r="28" fill="none" stroke="#34c759" stroke-width="7" stroke-linecap="round" stroke-dasharray="176" transform="rotate(-90 32 32)"/><text class="wgPct" x="32" y="37" text-anchor="middle" fill="#fff" font-size="15" font-weight="700"></text></svg><span class="wgBS"></span>'));
   }
   setTimeout(updWidgets, 0);
   return w;
@@ -586,7 +586,7 @@ function syncSheet() {
   $$('#sgWid button').forEach(b => b.classList.toggle('on', b.dataset.v === S.set.widgets));
   $('#rHue').value = S.set.hue;
   $('#hueRow').style.display = S.set.style === 'tint' ? 'block' : 'none';
-  [['tgPct', 'pct'], ['tgLockStart', 'lockStart'], ['tgLockOff', 'lockOff']].forEach(p => $('#' + p[0]).classList.toggle('on', !!S.set[p[1]]));
+  [['tgPct', 'pct'], ['tgLockStart', 'lockStart'], ['tgLockOff', 'lockOff'], ['tgOwnBar', 'ownBar']].forEach(p => $('#' + p[0]).classList.toggle('on', !!S.set[p[1]]));
 }
 function openSheet() { syncSheet(); $('#sheet').classList.add('on'); }
 function closeSheet() { $('#sheet').classList.remove('on'); save(); }
@@ -595,9 +595,9 @@ $('#sheet').addEventListener('pointerdown', e => { if (e.target.id === 'sheet') 
 $$('#sgStyle button').forEach(b => b.addEventListener('click', () => { S.set.style = b.dataset.v; applyStyle(); syncSheet(); save(); }));
 $$('#sgWid button').forEach(b => b.addEventListener('click', () => { S.set.widgets = b.dataset.v; syncSheet(); commit(); }));
 $('#rHue').addEventListener('input', e => { S.set.hue = +e.target.value; applyStyle(); save(); });
-[['tgPct', 'pct'], ['tgLockStart', 'lockStart'], ['tgLockOff', 'lockOff']].forEach(p => $('#' + p[0]).addEventListener('click', () => { S.set[p[1]] = !S.set[p[1]]; syncSheet(); updBat(); save(); }));
+[['tgPct', 'pct'], ['tgLockStart', 'lockStart'], ['tgLockOff', 'lockOff'], ['tgOwnBar', 'ownBar']].forEach(p => $('#' + p[0]).addEventListener('click', () => { S.set[p[1]] = !S.set[p[1]]; syncSheet(); updBat(); applyBar(); save(); }));
 $('#shWall').addEventListener('click', () => $('#fWall').click());
-$('#shHome').addEventListener('click', () => call('openHomeSettings'));
+$('#shHome').addEventListener('click', () => call('requestHome'));
 
 /* ---------- Fond d'écran et détourage ---------- */
 const idb = {
@@ -683,32 +683,76 @@ async function getWallCanvas() {
   URL.revokeObjectURL(o.u);
   return c;
 }
-let SEG = null;
-async function getSegmenter() {
-  if (SEG) return SEG;
+const SEGS = {};
+const MODELS = {
+  inter: { cls: 'InteractiveSegmenter', file: 'magic_touch.tflite', cdn: 'https://storage.googleapis.com/mediapipe-models/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite' },
+  selfie: { cls: 'ImageSegmenter', file: 'selfie_segmenter.tflite', cdn: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite' }
+};
+async function getSegmenter(kind) {
+  if (SEGS[kind]) return SEGS[kind];
+  const M = MODELS[kind];
   const base = new URL('vendor/', location.href).href;
   const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/';
   const sources = [
-    { lib: base + 'vision_bundle.js', wasm: base + 'wasm', model: base + 'magic_touch.tflite' },
-    { lib: CDN + 'vision_bundle.mjs', wasm: CDN + 'wasm', model: 'https://storage.googleapis.com/mediapipe-models/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite' }
+    { lib: base + 'vision_bundle.js', wasm: base + 'wasm', model: base + M.file },
+    { lib: CDN + 'vision_bundle.mjs', wasm: CDN + 'wasm', model: M.cdn }
   ];
   let lastErr = null;
   for (const s of sources) {
     try {
       const mod = await import(s.lib);
       const fs = await mod.FilesetResolver.forVisionTasks(s.wasm);
-      SEG = await mod.InteractiveSegmenter.createFromOptions(fs, {
+      SEGS[kind] = await mod[M.cls].createFromOptions(fs, {
         baseOptions: { modelAssetPath: s.model },
         outputCategoryMask: true,
         outputConfidenceMasks: false
       });
-      return SEG;
+      return SEGS[kind];
     } catch (e) { lastErr = e; console.warn('IA source échouée', s.lib, e); }
   }
   throw lastErr || new Error('IA indisponible');
 }
+async function runInteractive(c, nx, ny) {
+  const seg = await getSegmenter('inter');
+  let out = null;
+  seg.segment(c, { keypoint: { x: nx, y: ny } }, r => {
+    const m = r.categoryMask;
+    out = { arr: m.getAsUint8Array().slice(), w: m.width, h: m.height };
+  });
+  return out;
+}
+async function runSelfie(c) {
+  const seg = await getSegmenter('selfie');
+  let out = null;
+  seg.segment(c, r => {
+    const m = r.categoryMask;
+    out = { arr: m.getAsUint8Array().slice(), w: m.width, h: m.height };
+  });
+  return out;
+}
+/* Garde uniquement la zone connectée au point touché (le pixel touché fait foi pour savoir quelle valeur = sujet) */
+function buildCut(m, nx, ny) {
+  const w = m.w, h = m.h, n = w * h;
+  const px = Math.min(w - 1, Math.floor(nx * w)), py = Math.min(h - 1, Math.floor(ny * h));
+  const fg = m.arr[py * w + px];
+  const keep = new Uint8Array(n);
+  const stack = new Int32Array(n);
+  let sp = 0, count = 1;
+  const start = py * w + px;
+  keep[start] = 1; stack[sp++] = start;
+  while (sp > 0) {
+    const i = stack[--sp];
+    const x = i % w;
+    if (x > 0) { const j = i - 1; if (!keep[j] && m.arr[j] === fg) { keep[j] = 1; stack[sp++] = j; count++; } }
+    if (x < w - 1) { const j = i + 1; if (!keep[j] && m.arr[j] === fg) { keep[j] = 1; stack[sp++] = j; count++; } }
+    if (i >= w) { const j = i - w; if (!keep[j] && m.arr[j] === fg) { keep[j] = 1; stack[sp++] = j; count++; } }
+    if (i < n - w) { const j = i + w; if (!keep[j] && m.arr[j] === fg) { keep[j] = 1; stack[sp++] = j; count++; } }
+  }
+  return { keep: keep, count: count, ratio: count / n, w: w, h: h };
+}
+function shortErr(e) { return String(e && e.message ? e.message : e).slice(0, 90); }
 async function cutSubject(tx, ty) {
-  toast('Détourage en cours…');
+  toast('Détourage en cours…', 20000);
   try {
     const c = await getWallCanvas();
     if (!c) { toast('Choisis d’abord un fond'); return; }
@@ -717,21 +761,31 @@ async function cutSubject(tx, ty) {
     const dw = c.width * k, dh = c.height * k;
     const nx = Math.min(1, Math.max(0, (tx - (sw - dw) / 2) / dw));
     const ny = Math.min(1, Math.max(0, (ty - (sh - dh) / 2) / dh));
-    const seg = await getSegmenter();
-    let arr = null, mw = 0, mh = 0;
-    seg.segment(c, { keypoint: { x: nx, y: ny } }, r => {
-      const m = r.categoryMask;
-      mw = m.width; mh = m.height;
-      arr = m.getAsUint8Array().slice();
-    });
-    if (!arr) throw new Error('masque vide');
-    const px = Math.min(mw - 1, Math.floor(nx * mw)), py = Math.min(mh - 1, Math.floor(ny * mh));
-    const fg = arr[py * mw + px];
+    const log = [];
+    let res = null;
+    const okRatio = r => r >= 0.012 && r <= 0.88;
+    try {
+      const m = await runInteractive(c, nx, ny);
+      if (!m) throw new Error('aucun masque');
+      const b = buildCut(m, nx, ny);
+      log.push('IA 1 : ' + Math.round(b.ratio * 100) + ' %');
+      if (okRatio(b.ratio)) res = b;
+    } catch (e) { log.push('IA 1 : ' + shortErr(e)); }
+    if (!res) {
+      try {
+        const m = await runSelfie(c);
+        if (!m) throw new Error('aucun masque');
+        const b = buildCut(m, nx, ny);
+        log.push('IA 2 : ' + Math.round(b.ratio * 100) + ' %');
+        if (okRatio(b.ratio)) res = b;
+      } catch (e) { log.push('IA 2 : ' + shortErr(e)); }
+    }
+    if (!res) { toast('Sujet non isolé. Touche bien au centre du sujet. (' + log.join(' ; ') + ')', 10000); return; }
     const mc = document.createElement('canvas');
-    mc.width = mw; mc.height = mh;
+    mc.width = res.w; mc.height = res.h;
     const mx = mc.getContext('2d');
-    const id = mx.createImageData(mw, mh);
-    for (let i = 0; i < arr.length; i++) id.data[i * 4 + 3] = arr[i] === fg ? 255 : 0;
+    const id = mx.createImageData(res.w, res.h);
+    for (let i = 0; i < res.keep.length; i++) id.data[i * 4 + 3] = res.keep[i] ? 255 : 0;
     mx.putImageData(id, 0, 0);
     const oc = document.createElement('canvas');
     oc.width = c.width; oc.height = c.height;
@@ -743,10 +797,10 @@ async function cutSubject(tx, ty) {
     const blob = await new Promise(r => oc.toBlob(r, 'image/png'));
     await idb.set('cut', blob);
     await loadWall();
-    toast('Sujet détouré ✔');
+    toast('Sujet détouré ✔ (' + Math.round(res.ratio * 100) + ' % de l’image)', 4000);
   } catch (e) {
     console.warn(e);
-    toast('Détourage impossible. Tu peux importer un PNG détouré.');
+    toast('Détourage impossible : ' + shortErr(e), 10000);
   }
 }
 $('#fWall').addEventListener('change', async e => {
@@ -831,6 +885,7 @@ $('#bMode').addEventListener('click', () => { S.set.ckMode = S.set.ckMode === 'l
 $('#bDepth').addEventListener('click', () => { S.set.depth = !S.set.depth; applyWall(); syncPanel(); save(); });
 $('#bWall').addEventListener('click', () => $('#fWall').click());
 $('#bImp').addEventListener('click', () => $('#fCut').click());
+$('#bClr').addEventListener('click', async () => { await idb.del('cut'); await loadWall(); toast('Détourage retiré'); });
 $('#bCut').addEventListener('click', () => {
   if (!wallURL) { toast('Choisis d’abord un fond'); return; }
   pickMode = true;
@@ -982,6 +1037,28 @@ window.addEventListener('resize', () => {
   }, 220);
 });
 
+/* ---------- Plein écran, barre d'état, launcher par défaut ---------- */
+function applyInsets(r) {
+  if (!r) return;
+  const d = document.documentElement.style;
+  d.setProperty('--sat', Math.max(20, r.top || 0) + 'px');
+  d.setProperty('--sab', Math.max(0, r.bottom || 0) + 'px');
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
+  setTimeout(() => { if (!DRAG) renderHome(); fitClock(); }, 60);
+}
+function applyBar() {
+  $('#status').style.display = S.set.ownBar ? '' : 'none';
+  call('setStatusBar', { hidden: !!S.set.ownBar });
+}
+async function checkDefault() {
+  if (S.set.defAsked) return;
+  const r = await call('isDefaultHome');
+  if (r && r.value === false) $('#defBanner').classList.add('on');
+}
+$('#defYes').addEventListener('click', () => { $('#defBanner').classList.remove('on'); call('requestHome'); });
+$('#defNo').addEventListener('click', () => { $('#defBanner').classList.remove('on'); S.set.defAsked = true; save(); });
+
 /* ---------- Démarrage ---------- */
 async function boot() {
   applyStyle();
@@ -991,8 +1068,12 @@ async function boot() {
   await loadWall();
   if (!S.set.lockStart) { lock.classList.add('gone'); $('#app').classList.remove('locked'); }
   requestAnimationFrame(renderClock);
+  call('getInsets').then(applyInsets);
+  listen('insets', applyInsets);
+  applyBar();
   await loadApps();
   initBattery();
+  checkDefault();
 }
 boot();
 })();

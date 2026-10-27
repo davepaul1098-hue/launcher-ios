@@ -1,6 +1,6 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;background:#000;color:#fff;font-family:-apple-system,"SF Pro Text","Roboto","Helvetica Neue",Arial,sans-serif;overscroll-behavior:none}
-:root{--top:max(env(safe-area-inset-top,0px),26px);--ic:min(15vw,64px);--hue:210}
+:root{--top:var(--sat,max(env(safe-area-inset-top,0px),26px));--ic:min(15vw,64px);--hue:210}
 button{font-family:inherit;cursor:pointer}
 #app{position:fixed;inset:0;overflow:hidden}
 
@@ -38,7 +38,7 @@ button{font-family:inherit;cursor:pointer}
 .ic.fold img{border-radius:22%;width:100%;height:auto;aspect-ratio:1}
 
 /* Dock */
-#dock{margin:6px 14px calc(14px + env(safe-area-inset-bottom,0px));height:calc(var(--ic) + 26px);border-radius:32px;display:flex;justify-content:space-around;align-items:center;padding:0 8px}
+#dock{margin:6px 14px calc(14px + var(--sab,env(safe-area-inset-bottom,0px)));height:calc(var(--ic) + 26px);border-radius:32px;display:flex;justify-content:space-around;align-items:center;padding:0 8px}
 #dock .item{padding-top:0}
 
 /* Points */
@@ -63,9 +63,9 @@ button{font-family:inherit;cursor:pointer}
 .wg.date small{font-size:12px;font-weight:700;color:#ff6b6b;text-transform:uppercase}
 .wg.date big{font-size:46px;font-weight:300;line-height:1}
 .wg.date span{font-size:12px;opacity:.85;text-transform:capitalize}
-.wg.bat{align-items:center;justify-content:center;gap:4px}
-.wg.bat svg{width:72px;height:72px}
-.wg.bat span{font-size:12px;opacity:.85}
+.wg.wbat{align-items:center;justify-content:center;gap:4px}
+.wg.wbat svg{width:72px;height:72px}
+.wg.wbat span{font-size:12px;opacity:.85}
 .wg.notes b{font-size:13px;color:#ffd60a}
 .wg.notes textarea{flex:1;background:none;border:0;color:#fff;resize:none;outline:0;font-size:14px;font-family:inherit;margin-top:6px;-webkit-user-select:text;user-select:text}
 
@@ -112,7 +112,7 @@ button{font-family:inherit;cursor:pointer}
 /* Réglages */
 #sheet{position:absolute;inset:0;z-index:40;display:none;background:rgba(0,0,0,.4);align-items:flex-end}
 #sheet.on{display:flex}
-#sheetPanel{width:100%;border-radius:28px 28px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:85vh;overflow:auto;background:rgba(36,36,44,.86)}
+#sheetPanel{width:100%;border-radius:28px 28px 0 0;padding:18px 16px calc(18px + var(--sab,env(safe-area-inset-bottom,0px)));max-height:85vh;overflow:auto;background:rgba(36,36,44,.86)}
 .sh-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:18px}
 .sh-head button{background:none;border:0;color:#4da3ff;font-size:16px}
 .sh-row{margin-bottom:14px}
@@ -149,15 +149,15 @@ button{font-family:inherit;cursor:pointer}
 #ckFrame{display:none;position:absolute;border:1.5px solid rgba(255,255,255,.65);border-radius:16px;z-index:5;pointer-events:none}
 #lock.edit #ckFrame{display:block}
 #ckHandle{position:absolute;left:50%;bottom:-14px;width:46px;height:26px;margin-left:-23px;border-radius:13px;background:rgba(255,255,255,.92);pointer-events:auto;touch-action:none}
-#lkBtns{position:absolute;left:0;right:0;bottom:calc(46px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;padding:0 40px;z-index:4}
+#lkBtns{position:absolute;left:0;right:0;bottom:calc(46px + var(--sab,env(safe-area-inset-bottom,0px)));display:flex;justify-content:space-between;padding:0 40px;z-index:4}
 .round{width:52px;height:52px;border-radius:50%;color:#fff;font-size:21px}
 .round.on{background:rgba(255,255,255,.55)}
-#lkHint{position:absolute;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom,0px));text-align:center;z-index:4;font-size:12px;opacity:.8}
+#lkHint{position:absolute;left:0;right:0;bottom:calc(10px + var(--sab,env(safe-area-inset-bottom,0px)));text-align:center;z-index:4;font-size:12px;opacity:.8}
 #lkHint i{display:block;width:130px;height:5px;border-radius:3px;background:#fff;margin:8px auto 0}
 #pickBanner{display:none;position:absolute;top:calc(var(--top) + 90px);left:20px;right:20px;z-index:7;padding:12px;border-radius:16px;text-align:center;background:rgba(0,0,0,.65);font-size:15px}
 #lock.pick #pickBanner{display:block}
 #lock.pick #lkPanel{display:none}
-#lkPanel{display:none;position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:6;border-radius:26px;padding:12px;background:rgba(30,30,36,.78)}
+#lkPanel{display:none;position:absolute;left:10px;right:10px;bottom:calc(10px + var(--sab,env(safe-area-inset-bottom,0px)));z-index:6;border-radius:26px;padding:12px;background:rgba(30,30,36,.78)}
 #lock.edit #lkPanel{display:block}
 #lock.edit #lkBtns,#lock.edit #lkHint{display:none}
 .swatches{display:flex;justify-content:space-around;margin-bottom:10px}
@@ -191,3 +191,10 @@ button{font-family:inherit;cursor:pointer}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 .zoom{position:fixed;z-index:80;background-size:cover;background-position:center;border-radius:23%;transition:left .35s,top .35s,width .35s,height .35s,border-radius .35s,opacity .3s .3s;pointer-events:none}
 .zoom.go{left:0!important;top:0!important;width:100vw!important;height:100vh!important;border-radius:0;opacity:0}
+
+/* Bandeau launcher par défaut */
+#defBanner{display:none;position:absolute;left:14px;right:14px;top:calc(var(--top) + 10px);z-index:12;border-radius:20px;padding:12px 14px;font-size:14px;flex-direction:column;gap:10px;background:rgba(30,30,36,.8)}
+#defBanner.on{display:flex}
+#defBanner div{display:flex;gap:8px}
+#defBanner button{flex:1;padding:10px;border-radius:12px;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:14px}
+#defBanner #defYes{background:#0a84ff;font-weight:700}
