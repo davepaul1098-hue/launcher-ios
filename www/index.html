@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>Launcher iOS</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app" class="locked st-normal">
+
+  <div id="wall" class="defwall"></div>
+  <div id="wallShade"></div>
+
+  <div id="home">
+    <div id="editbar">
+      <button id="eSet" class="gl pill">Réglages</button>
+      <button id="eDone" class="gl pill">OK</button>
+    </div>
+    <div id="pages"></div>
+    <div id="dots"></div>
+    <div id="dock" class="gl"></div>
+  </div>
+
+  <div id="folder">
+    <div id="folderPanel" class="gl">
+      <input id="folderName" maxlength="24" autocomplete="off">
+      <div id="folderGrid"></div>
+    </div>
+  </div>
+
+  <div id="spot">
+    <div id="spotBox">
+      <div class="gl spotbar"><span>🔍</span><input id="spotIn" placeholder="Rechercher" autocomplete="off"><button id="spotX">Annuler</button></div>
+      <div id="spotRes" class="gl"></div>
+    </div>
+  </div>
+
+  <div id="menuBack"><div id="menu" class="gl"></div></div>
+
+  <div id="sheet">
+    <div id="sheetPanel" class="gl">
+      <div class="sh-head"><b>Réglages du launcher</b><button id="shX">Fermer</button></div>
+      <div class="sh-row"><label>Style des icônes</label>
+        <div class="seg" id="sgStyle"><button data-v="normal">Normal</button><button data-v="dark">Sombre</button><button data-v="tint">Teinté</button><button data-v="clear">Clair</button></div>
+      </div>
+      <div class="sh-row" id="hueRow"><label>Teinte</label><input type="range" id="rHue" min="0" max="360"></div>
+      <div class="sh-row"><label>Widgets</label>
+        <div class="seg" id="sgWid"><button data-v="none">Aucun</button><button data-v="duo">Date + Batterie</button><button data-v="notes">Notes</button></div>
+      </div>
+      <div class="sh-row inline"><label>% dans la batterie</label><button class="tg" id="tgPct"></button></div>
+      <div class="sh-row inline"><label>Écran de veille au démarrage</label><button class="tg" id="tgLockStart"></button></div>
+      <div class="sh-row inline"><label>Écran de veille à l’extinction</label><button class="tg" id="tgLockOff"></button></div>
+      <div class="sh-row"><button id="shWall" class="wide">Changer le fond d’écran</button></div>
+      <div class="sh-row"><button id="shHome" class="wide">Définir comme launcher par défaut</button></div>
+    </div>
+  </div>
+
+  <div id="lock">
+    <div id="lkBg" class="defwall"></div>
+    <div id="lkShade"></div>
+    <div id="lkDate"></div>
+    <div id="lkClock">
+      <div id="ckIn" data-s="glass"><div id="ck1"></div><div id="ck2"></div></div>
+    </div>
+    <div id="ckFrame"><i id="ckHandle"></i></div>
+    <div id="lkSubj"></div>
+    <div id="lkBtns">
+      <button id="bTorch" class="gl round">🔦</button>
+      <button id="bCam" class="gl round">📷</button>
+    </div>
+    <div id="lkHint"><span>Balayez vers le haut pour ouvrir</span><i></i></div>
+    <div id="pickBanner">Touche le sujet à détourer</div>
+    <div id="lkPanel" class="gl">
+      <div class="swatches" id="ckStyles">
+        <button data-v="glass" style="background:linear-gradient(#ffffffd9,#ffffff55)"></button>
+        <button data-v="white" style="background:#fff"></button>
+        <button data-v="gold" style="background:linear-gradient(#ffe29a,#ff9f45)"></button>
+        <button data-v="ice" style="background:linear-gradient(#e6f6ff,#6ec1ff)"></button>
+        <button data-v="red" style="background:linear-gradient(#ffb3b3,#ff3b30)"></button>
+      </div>
+      <div class="lk-row"><label>Largeur</label><input type="range" id="rW" min="25" max="95"></div>
+      <div class="lk-row"><label>Hauteur</label><input type="range" id="rH" min="100" max="420"></div>
+      <div class="lk-row two"><button id="bMode">Style</button><button id="bDepth">Profondeur</button></div>
+      <div class="lk-row two"><button id="bWall">Changer le fond</button><button id="bCut">Détourer</button></div>
+      <div class="lk-row two"><button id="bImp">Importer un PNG</button><button id="bDone" class="primary">Terminé</button></div>
+    </div>
+  </div>
+
+  <div id="status">
+    <span id="sbTime"></span>
+    <span id="sbR">
+      <span id="sbNet"></span>
+      <span id="sbBolt">⚡</span>
+      <span class="batw"><span id="sbBat" class="bat"><i class="fill"></i><b></b></span></span>
+    </span>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<input type="file" id="fWall" accept="image/*" hidden>
+<input type="file" id="fCut" accept="image/png" hidden>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "appId": "com.moi.launcherios",
+  "appName": "Launcher iOS",
+  "webDir": "www",
+  "backgroundColor": "#000000",
+  "server": {
+    "androidScheme": "https"
+  }
+}
